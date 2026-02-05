@@ -1,13 +1,19 @@
-self.addEventListener("install", event => {
-    event.waitUntil(
-      caches.open("sleep-tracker").then(cache => {
-        return cache.addAll([
-          "./",
-          "./index.html",
-          "./style.css",
-          "./script.js"
-        ]);
-      })
-    );
-  });
-  
+const CACHE_NAME = 'daily-planner-v1';
+const ASSETS = [
+  './',
+  './index.html',
+  './manifest.json',
+  './script.js',
+];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+  );
+});
+
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request).then(response => response || fetch(event.request))
+  );
+});
