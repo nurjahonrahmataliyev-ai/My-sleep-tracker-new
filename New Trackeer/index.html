@@ -3,13 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sleep & Screen Tracker</title>
-    <!-- Offline Fallback: Tailwind & Chart.js would normally be remote, 
-         but for a fully offline app, these are usually local files. 
-         I am using the CDN links below, but the app logic is built 
-         to handle the "laptop local storage" requirement. -->
+    <title>Personal Daily Planner</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
 
@@ -19,25 +14,23 @@
             transition: background-color 0.3s, color 0.3s;
         }
         .container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 0 auto;
             padding: 20px;
         }
-        /* Light Theme */
         body, .app-card {
             background-color: #f8fafc;
-            color: #1e293b;
+            color: #0f172a;
         }
         .app-card {
             background-color: #ffffff;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
             border: 1px solid #e2e8f0;
         }
         .input-field {
             background-color: #f1f5f9;
             border: 1px solid #cbd5e1;
         }
-        /* Dark Theme */
         body.dark, .dark .app-card {
             background-color: #0f172a;
             color: #f1f5f9;
@@ -51,337 +44,158 @@
             color: #f1f5f9;
             border: 1px solid #475569;
         }
-        .success-text { color: #10b981; }
-        .danger-text { color: #ef4444; }
+        .label-muted {
+            color: #64748b;
+        }
+        .dark .label-muted {
+            color: #94a3b8;
+        }
     </style>
 </head>
 <body>
     <div class="container min-h-screen">
-        <!-- Header -->
-        <header class="py-6 flex justify-between items-center border-b border-gray-200 dark:border-gray-800 mb-6">
+        <header class="py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-gray-200 dark:border-gray-800 mb-6">
             <div>
-                <h1 class="text-3xl font-extrabold text-indigo-600 dark:text-indigo-400">Sleep Optimizer</h1>
-                <p class="text-sm text-gray-500">Local Privacy Mode • Fixed Schedule Tracker</p>
+                <p class="uppercase text-xs tracking-[0.3em] label-muted">Personal Planner</p>
+                <h1 class="text-3xl font-extrabold text-indigo-600 dark:text-indigo-400">Daily Focus Canvas</h1>
+                <p class="text-sm label-muted">Calm, motivating, and optimized for 1% progress.</p>
             </div>
-            <button id="theme-toggle" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 transition">
-                <span id="theme-icon">🌙</span>
-            </button>
+            <div class="flex items-center gap-3">
+                <div class="text-right">
+                    <p class="text-xs uppercase label-muted">Sleep Window</p>
+                    <p class="text-sm font-semibold">10:30–10:40 PM</p>
+                </div>
+                <button id="theme-toggle" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 transition" aria-label="Toggle theme">
+                    <span id="theme-icon">🌙</span>
+                </button>
+            </div>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Logging Form -->
-            <div class="app-card p-6 rounded-2xl lg:col-span-1 h-fit">
-                <h2 class="text-xl font-bold mb-4">Daily Log</h2>
+            <section class="app-card p-6 rounded-2xl lg:col-span-1 h-fit space-y-6">
+                <div>
+                    <h2 class="text-xl font-bold">Inputs</h2>
+                    <p class="text-sm label-muted">Keep it simple. We do the thinking for you.</p>
+                </div>
+
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Date</label>
-                        <input type="date" id="date-input" class="w-full p-2 rounded-lg input-field outline-none focus:ring-2 focus:ring-indigo-500">
+                        <label class="block text-xs font-bold uppercase label-muted mb-1">Current time</label>
+                        <div class="flex items-center gap-2">
+                            <input type="time" id="current-time" class="w-full p-2 rounded-lg input-field outline-none focus:ring-2 focus:ring-indigo-500">
+                            <button id="use-now" class="px-3 py-2 rounded-lg bg-indigo-100 text-indigo-700 font-semibold">Now</button>
+                        </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase text-gray-400 mb-1">When did you go to bed?</label>
-                        <input type="time" id="bed-time-input" class="w-full p-2 rounded-lg input-field outline-none focus:ring-2 focus:ring-indigo-500">
+                        <label class="block text-xs font-bold uppercase label-muted mb-1">Energy level</label>
+                        <select id="energy-level" class="w-full p-2 rounded-lg input-field outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="high">High</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="low">Low</option>
+                        </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase text-gray-400 mb-1">When did you wake up?</label>
-                        <input type="time" id="wake-time-input" class="w-full p-2 rounded-lg input-field outline-none focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Screen time before bed (mins)</label>
-                        <input type="number" id="screen-time-input" placeholder="Minutes" class="w-full p-2 rounded-lg input-field outline-none focus:ring-2 focus:ring-indigo-500">
-                    </div>
-                    <button id="log-btn" class="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition transform active:scale-95 shadow-lg shadow-indigo-500/30">
-                        Save to Local Storage
-                    </button>
-                    <p id="msg" class="text-center text-sm font-medium h-4"></p>
-                </div>
-            </div>
-
-            <!-- Dashboard -->
-            <div class="lg:col-span-2 space-y-6">
-                <!-- Stats Summary -->
-                <div class="grid grid-cols-3 gap-4">
-                    <div class="app-card p-4 rounded-xl text-center">
-                        <p class="text-xs text-gray-400 font-bold uppercase">Avg Sleep</p>
-                        <p id="stat-avg-sleep" class="text-xl font-bold">0h</p>
-                    </div>
-                    <div class="app-card p-4 rounded-xl text-center">
-                        <p class="text-xs text-gray-400 font-bold uppercase">Avg Screen</p>
-                        <p id="stat-avg-screen" class="text-xl font-bold text-amber-500">0m</p>
-                    </div>
-                    <div class="app-card p-4 rounded-xl text-center">
-                        <p class="text-xs text-gray-400 font-bold uppercase">Consistency</p>
-                        <p id="stat-consistency" class="text-xl font-bold">--</p>
+                        <label class="block text-xs font-bold uppercase label-muted mb-1">Context (optional)</label>
+                        <textarea id="context-input" rows="3" placeholder="Tired, stressed, exam soon..." class="w-full p-2 rounded-lg input-field outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
                     </div>
                 </div>
 
-                <!-- MAIN GRAPH: Sleep Hours -->
+                <div class="space-y-3">
+                    <div>
+                        <p class="text-xs font-bold uppercase label-muted">Daily priorities</p>
+                        <ul class="text-sm mt-2 space-y-1">
+                            <li>1. SAT preparation</li>
+                            <li>2. School & homework</li>
+                            <li>3. Gym (17:00, fixed)</li>
+                            <li>4. Read Atomic Habits</li>
+                            <li>5. Life habits & responsibilities</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold uppercase label-muted">Completion check</p>
+                        <div class="mt-2 space-y-2 text-sm">
+                            <label class="flex items-center gap-2"><input type="checkbox" id="done-sat"> SAT prep done</label>
+                            <label class="flex items-center gap-2"><input type="checkbox" id="done-homework"> Homework done</label>
+                            <label class="flex items-center gap-2"><input type="checkbox" id="done-gym"> Gym done</label>
+                            <label class="flex items-center gap-2"><input type="checkbox" id="done-reading"> Read Atomic Habits</label>
+                            <label class="flex items-center gap-2"><input type="checkbox" id="done-life"> Life responsibilities</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <p class="text-xs font-bold uppercase label-muted">Habits scorecard</p>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <label class="flex items-center gap-2"><input type="checkbox" data-habit="good" value="Make my bed"> Make my bed</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" data-habit="good" value="Brush my teeth"> Brush my teeth</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" data-habit="good" value="Do homework"> Do homework</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" data-habit="good" value="Go to gym"> Go to gym</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" data-habit="good" value="Read Atomic Habits"> Read Atomic Habits</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" data-habit="good" value="Feed cows"> Feed cows</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" data-habit="neutral" value="Wake up"> Wake up</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" data-habit="neutral" value="Wash face"> Wash face</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" data-habit="neutral" value="Meals"> Meals</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" data-habit="neutral" value="Get dressed"> Get dressed</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" data-habit="neutral" value="School"> School</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" data-habit="bad" value="Watch TV"> Watch TV</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" data-habit="bad" value="Scroll social"> Scroll social / games</label>
+                    </div>
+                    <p id="habit-summary" class="text-xs label-muted"></p>
+                </div>
+
+                <button id="generate-plan" class="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition transform active:scale-95 shadow-lg shadow-indigo-500/30">
+                    What should I do right now?
+                </button>
+                <p id="status-msg" class="text-center text-sm font-medium h-4"></p>
+            </section>
+
+            <section class="lg:col-span-2 space-y-6">
                 <div class="app-card p-6 rounded-2xl">
-                    <h3 class="text-lg font-bold mb-4 text-indigo-500">Main: Sleep Duration (Hours)</h3>
-                    <div class="h-64">
-                        <canvas id="sleepTrendChart"></canvas>
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+                        <div>
+                            <p class="text-xs uppercase label-muted">Use Canvas always</p>
+                            <h3 class="text-lg font-bold">Daily Focus Canvas</h3>
+                        </div>
+                        <div class="text-sm label-muted">
+                            Remaining today: <span id="remaining-hours" class="font-semibold">--</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-3">
+                            <div class="p-4 rounded-xl bg-indigo-50 dark:bg-indigo-900/40">
+                                <p class="text-xs uppercase label-muted">Do this now</p>
+                                <p id="do-now" class="text-lg font-semibold">Set your time and ask.</p>
+                            </div>
+                            <div>
+                                <p class="text-xs uppercase label-muted">How to do it better</p>
+                                <ul id="execution-tips" class="list-disc ml-5 text-sm space-y-1"></ul>
+                            </div>
+                            <div>
+                                <p class="text-xs uppercase label-muted">1% improvement</p>
+                                <p id="improvement-tip" class="text-sm">Small wins will appear here.</p>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase label-muted">Canvas timeline</p>
+                            <canvas id="plannerCanvas" height="160" class="w-full mt-2 rounded-xl bg-slate-100 dark:bg-slate-800"></canvas>
+                            <p class="text-xs label-muted mt-2">No heavy thinking after 9:30 PM.</p>
+                        </div>
                     </div>
                 </div>
 
-                <!-- SIDE-BY-SIDE GRAPHS: Bedtime and Screen Use -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="app-card p-6 rounded-2xl">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-sm font-bold uppercase text-gray-500">Bedtime Score</h3>
-                            <span class="text-[10px] text-gray-400">Up=Early / Down=Late</span>
-                        </div>
-                        <div class="h-40">
-                            <canvas id="bedtimeTrendChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="app-card p-6 rounded-2xl">
-                        <h3 class="text-sm font-bold uppercase text-gray-500 mb-4">Screen Use (m)</h3>
-                        <div class="h-40">
-                            <canvas id="screenTrendChart"></canvas>
-                        </div>
-                    </div>
+                <div class="app-card p-6 rounded-2xl">
+                    <p class="text-xs uppercase label-muted">Time-blocked mini plan</p>
+                    <div id="mini-plan" class="mt-3 space-y-3 text-sm"></div>
                 </div>
-            </div>
-        </div>
 
-        <!-- History -->
-        <div class="app-card mt-6 p-6 rounded-2xl mb-10">
-            <h2 class="text-xl font-bold mb-4">Your Local Records</h2>
-            <div id="history-list" class="divide-y divide-gray-100 dark:divide-gray-700">
-                <!-- Logged items will appear here -->
-            </div>
+                <div class="app-card p-6 rounded-2xl">
+                    <p class="text-xs uppercase label-muted">Why this plan works</p>
+                    <p id="plan-reason" class="mt-3 text-sm">Priorities, energy, and time windows will be balanced here.</p>
+                </div>
+            </section>
         </div>
     </div>
 
-    <script>
-        // Use a unique key for laptop's localStorage
-        const STORAGE_KEY = 'offline_sleep_optimizer_v1';
-        let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        
-        let sleepChart = null;
-        let screenChart = null;
-        let bedtimeChart = null;
-
-        const logBtn = document.getElementById('log-btn');
-        const themeBtn = document.getElementById('theme-toggle');
-        const msg = document.getElementById('msg');
-
-        window.onload = () => {
-            document.getElementById('date-input').value = new Date().toISOString().split('T')[0];
-            updateUI();
-        };
-
-        themeBtn.onclick = () => {
-            document.body.classList.toggle('dark');
-            const isDark = document.body.classList.contains('dark');
-            document.getElementById('theme-icon').innerText = isDark ? '☀️' : '🌙';
-            renderCharts();
-        };
-
-        logBtn.onclick = () => {
-            const date = document.getElementById('date-input').value;
-            const bedTime = document.getElementById('bed-time-input').value;
-            const wakeTime = document.getElementById('wake-time-input').value;
-            const screenTime = parseInt(document.getElementById('screen-time-input').value) || 0;
-
-            if (!date || !bedTime || !wakeTime) {
-                showMsg("Please enter both sleep and wake times.", "danger-text");
-                return;
-            }
-
-            const duration = calcDuration(bedTime, wakeTime);
-            const bedScore = calcBedScore(bedTime);
-
-            const entry = { date, bedTime, wakeTime, screenTime, duration, bedScore };
-            
-            records.push(entry);
-            // Sort by date so graphs look correct
-            records.sort((a, b) => new Date(a.date) - new Date(b.date));
-            
-            // Save to Laptop Local Storage
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-            
-            updateUI();
-            showMsg("Record Saved Locally", "success-text");
-            
-            // Reset fields
-            document.getElementById('bed-time-input').value = '';
-            document.getElementById('wake-time-input').value = '';
-            document.getElementById('screen-time-input').value = '';
-        };
-
-        function calcBedScore(time) {
-            const [h, m] = time.split(':').map(Number);
-            let totalMins = h * 60 + m;
-            // Treat early morning sleep (00:00 to 12:00) as later than late night
-            if (h < 12) totalMins += 1440;
-            // Negative so that 11 PM (-1380) is "higher" than 1 AM (-1500)
-            return -totalMins; 
-        }
-
-        function calcDuration(start, end) {
-            const [sH, sM] = start.split(':').map(Number);
-            const [eH, eM] = end.split(':').map(Number);
-            let diff = (eH * 60 + eM) - (sH * 60 + sM);
-            if (diff < 0) diff += 1440; 
-            return diff;
-        }
-
-        function showMsg(text, cls) {
-            msg.innerText = text;
-            msg.className = "text-center text-sm font-medium " + cls;
-            setTimeout(() => msg.innerText = "", 3000);
-        }
-
-        function updateUI() {
-            renderHistory();
-            renderStats();
-            renderCharts();
-        }
-
-        function renderStats() {
-            if (!records.length) return;
-            const avgSleep = records.reduce((a, b) => a + b.duration, 0) / records.length;
-            const avgScreen = records.reduce((a, b) => a + b.screenTime, 0) / records.length;
-            
-            document.getElementById('stat-avg-sleep').innerText = (avgSleep / 60).toFixed(1) + 'h';
-            document.getElementById('stat-avg-screen').innerText = Math.round(avgScreen) + 'm';
-            
-            const lastThree = records.slice(-3);
-            if (lastThree.length > 1) {
-                const bedScores = lastThree.map(r => r.bedScore);
-                const variance = Math.max(...bedScores) - Math.min(...bedScores);
-                document.getElementById('stat-consistency').innerText = variance <= 60 ? 'High' : 'Low';
-            }
-        }
-
-        function renderHistory() {
-            const list = document.getElementById('history-list');
-            list.innerHTML = records.slice().reverse().map((r, i) => `
-                <div class="py-3 flex justify-between items-center">
-                    <div>
-                        <p class="font-bold text-sm text-gray-600 dark:text-gray-300">${r.date}</p>
-                        <p class="text-xs text-gray-400">Bed: ${r.bedTime} | Wake: ${r.wakeTime}</p>
-                    </div>
-                    <div class="text-right flex items-center gap-4">
-                        <div class="text-right">
-                            <p class="font-bold text-indigo-500 text-sm">${(r.duration/60).toFixed(1)}h sleep</p>
-                            <p class="text-xs text-amber-500">${r.screenTime}m screen</p>
-                        </div>
-                        <button onclick="deleteRecord(${records.length - 1 - i})" class="p-2 text-gray-300 hover:text-red-500 transition">✕</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        window.deleteRecord = (index) => {
-            records.splice(index, 1);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-            updateUI();
-        };
-
-        function renderCharts() {
-            if (records.length === 0) return;
-            
-            const isDark = document.body.classList.contains('dark');
-            const mainColor = isDark ? '#818cf8' : '#4f46e5';
-            const screenColor = '#f59e0b';
-            const bedtimeColor = '#10b981';
-            const textColor = isDark ? '#94a3b8' : '#64748b';
-            const gridColor = isDark ? '#334155' : '#f1f5f9';
-
-            const labels = records.map(r => r.date.split('-').slice(1).join('/'));
-            
-            // MAIN: Sleep Duration Chart
-            if (sleepChart) sleepChart.destroy();
-            const ctx1 = document.getElementById('sleepTrendChart').getContext('2d');
-            sleepChart = new Chart(ctx1, {
-                type: 'line',
-                data: {
-                    labels,
-                    datasets: [{
-                        label: 'Total Sleep Hours',
-                        data: records.map(r => (r.duration / 60).toFixed(1)),
-                        borderColor: mainColor,
-                        backgroundColor: mainColor + '11',
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 6,
-                        pointBackgroundColor: mainColor
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { 
-                        y: { 
-                            beginAtZero: false,
-                            ticks: { color: textColor }, 
-                            grid: { color: gridColor } 
-                        },
-                        x: { ticks: { color: textColor }, grid: { display: false } }
-                    }
-                }
-            });
-
-            // Bedtime Score Chart
-            if (bedtimeChart) bedtimeChart.destroy();
-            const ctx0 = document.getElementById('bedtimeTrendChart').getContext('2d');
-            bedtimeChart = new Chart(ctx0, {
-                type: 'line',
-                data: {
-                    labels,
-                    datasets: [{
-                        label: 'Schedule Score',
-                        data: records.map(r => r.bedScore),
-                        borderColor: bedtimeColor,
-                        borderDash: [5, 5],
-                        tension: 0.4,
-                        pointRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { 
-                        legend: { display: false },
-                        tooltip: { callbacks: { label: (ctx) => `Bedtime: ${records[ctx.dataIndex].bedTime}` } }
-                    },
-                    scales: { 
-                        y: { display: false },
-                        x: { ticks: { color: textColor }, grid: { display: false } }
-                    }
-                }
-            });
-
-            // Screen Chart
-            if (screenChart) screenChart.destroy();
-            const ctx2 = document.getElementById('screenTrendChart').getContext('2d');
-            screenChart = new Chart(ctx2, {
-                type: 'line',
-                data: {
-                    labels,
-                    datasets: [{
-                        label: 'Minutes',
-                        data: records.map(r => r.screenTime),
-                        borderColor: screenColor,
-                        backgroundColor: screenColor + '11',
-                        fill: true,
-                        tension: 0.3,
-                        pointRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { 
-                        y: { ticks: { color: textColor }, grid: { color: gridColor } },
-                        x: { ticks: { color: textColor }, grid: { display: false } }
-                    }
-                }
-            });
-        }
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
